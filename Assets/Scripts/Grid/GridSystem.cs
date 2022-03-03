@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -29,7 +30,7 @@ public class GridSystem : MonoBehaviour
     [SerializeField] private Transform gridStartPoint;
 
     [SerializeField] private GridObjects gridObjects;
-    [SerializeField] private int defaultDepth; // greater the depth, closer the object to the screen
+    [SerializeField] private int defaultDepth = 1; // greater the depth, closer the object to the screen
 
     private static FieldGrid<IPlaceable> grid;
 
@@ -73,27 +74,39 @@ public class GridSystem : MonoBehaviour
         placeable.PositionOnGrid = coords;
     }
 
-    public void PlaceObject(GameObject obj, Vector2Int coords)
+    public bool PlaceObject(GameObject obj, Vector2Int coords)
     {
         var placeable = obj.GetComponent<IPlaceable>();
-        if (placeable == null) return;
+        if (placeable == null) return false;
 
-        if (!grid.IsOccupied(coords))
-        {
-            grid.Set(placeable, coords);
-            placeable.PositionOnGrid = coords;
-        }
+        if (grid.IsOccupied(coords)) return false;
+
+        grid.Set(placeable, coords);
+        placeable.PositionOnGrid = coords;
+        return true;
     }
 
     public bool MoveOnGrid(IMoveable moveable, Vector2Int direction)
     {
         var newCoords = moveable.PositionOnGrid + direction;
-        if (grid.IsOccupied(newCoords)) return false;
+        try
+        {
+            if (!grid.IsValid(newCoords) || grid.IsOccupied(newCoords) && !grid.Get(newCoords).IsPassable) return false;
+        }
+        catch (NullReferenceException e)
+        {
+            Debug.Log(e);
+        }
 
         grid.Remove(moveable.PositionOnGrid);
         grid.Set(moveable, newCoords);
         moveable.PositionOnGrid = newCoords;
         return true;
+    }
+
+    public Vector3 Coords2WorldPosition(Vector2Int coords)
+    {
+        return Coords2WorldPosition(coords, defaultDepth);
     }
 
     public Vector3 Coords2WorldPosition(Vector2Int coords, int depth)
@@ -120,11 +133,19 @@ public class GridSystem : MonoBehaviour
             for (var j = 0; j < grid.height; j++)
             {
                 var cellCoords = new Vector2Int(i, j);
-                if (grid.Distance(searchPosition, cellCoords) > searchRange) continue;
+                if (grid.Distance(searchPosition, cellCoords) > searchRange)
+                    continue;
 
                 var cell = grid.Get(cellCoords);
-                if (cell != null && cell.Object.CompareTag(tag))
-                    return cell;
+                try
+                {
+                    if (cell != null && cell.Object.CompareTag(tag))
+                        return cell;
+                }
+                catch (MissingReferenceException e)
+                {
+                    Debug.Log(e);
+                }
             }
         }
         return null;

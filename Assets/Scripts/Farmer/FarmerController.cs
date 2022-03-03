@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class FarmerController : StateMachine
+public class FarmerController : StateMachine, IBombInteractable
 {
     private IMoveable moveable;
     private List<Vector2Int> path;
@@ -17,6 +17,8 @@ public class FarmerController : StateMachine
     [SerializeField] private float petrifyDiration;
     [SerializeField] private int visionRange;
     [SerializeField] private string pigTag;
+
+    public bool isStunned = false;
 
     protected override void Start()
     {
@@ -43,13 +45,13 @@ public class FarmerController : StateMachine
         // Roam state
         var stateTransitions = new Dictionary<Func<bool>, State>();
         stateTransitions.Add(PigFound, chaseState);
-        stateTransitions.Add(SteppedOnBomb, stunnedState);
+        stateTransitions.Add(Stunned, stunnedState);
         stateMachine.Add(roamState, stateTransitions);
 
         // Chase state
         stateTransitions = new Dictionary<Func<bool>, State>();
         stateTransitions.Add(PigLost, roamState);
-        stateTransitions.Add(SteppedOnBomb, stunnedState);
+        stateTransitions.Add(Stunned, stunnedState);
         stateMachine.Add(chaseState, stateTransitions);
 
         // Stunned state
@@ -59,6 +61,11 @@ public class FarmerController : StateMachine
 
         // set initial state (without activating it)
         currentState = roamState;
+    }
+
+    public void TriggerBomb()
+    {
+        isStunned = true;
     }
 
     #region behaviours
@@ -134,6 +141,7 @@ public class FarmerController : StateMachine
     {
         animator.runtimeAnimatorController = dirtyAnimatorController;
         yield return new WaitForSeconds(petrifyDiration);
+        isStunned = false;
         CheckTriggers();
     }
     #endregion
@@ -145,9 +153,9 @@ public class FarmerController : StateMachine
         return pigInVision != null;
     }
 
-    private bool SteppedOnBomb()
+    private bool Stunned()
     {
-        return false;
+        return isStunned;
     }
 
     private bool PigLost()

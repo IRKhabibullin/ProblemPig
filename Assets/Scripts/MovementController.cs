@@ -13,6 +13,8 @@ public class MovementController : MonoBehaviour, IMoveable
     public Vector2Int PositionOnGrid { get; set; }
 
     public bool IsMoving { get; set; } = false;
+    public bool IsPassable { get; set; } = true;
+
     private IEnumerator movementCoroutine;
 
     void Start()

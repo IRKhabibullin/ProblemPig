@@ -3,6 +3,8 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     private IMoveable moveable;
+    private Vector2Int lastDirection;
+    [SerializeField] private GameObject bombPrefab;
 
     void Start()
     {
@@ -17,14 +19,15 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         UpdateMovement();
+        CheckPlantInput();
     }
 
     private void UpdateMovement()
     {
-        var direction = CheckMovement();
-        if (direction != Vector2Int.zero)
+        lastDirection = CheckMovement();
+        if (lastDirection != Vector2Int.zero)
         {
-            moveable.Move(direction);
+            moveable.Move(lastDirection);
         }
     }
 
@@ -32,5 +35,25 @@ public class PlayerController : MonoBehaviour
     {
         var horizontal = (int)Input.GetAxisRaw("Horizontal");
         return new Vector2Int(horizontal, horizontal != 0 ? 0 : (int)Input.GetAxisRaw("Vertical"));
+    }
+
+    private void CheckPlantInput()
+    {
+        if (Input.GetKeyUp(KeyCode.Space))
+        {
+            PlantBomb();
+        }
+
+    }
+
+    private void PlantBomb()
+    {
+        var bomb = Instantiate(bombPrefab, transform.position, Quaternion.identity);
+        var pigBackside = lastDirection == Vector2Int.zero ? Vector2Int.right : -lastDirection;
+        var placed = GridSystem.Instance.PlaceObject(bomb, moveable.PositionOnGrid + pigBackside);
+        if (placed)
+            bomb.transform.position = GridSystem.Instance.Coords2WorldPosition(bomb.GetComponent<IPlaceable>().PositionOnGrid);
+        else
+            Destroy(bomb);
     }
 }
