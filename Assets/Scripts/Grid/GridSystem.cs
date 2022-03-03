@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class GridSystem : MonoBehaviour
@@ -21,12 +22,16 @@ public class GridSystem : MonoBehaviour
 
     [SerializeField] private int gridWidth = 17;
     [SerializeField] private int gridHeight = 9;
-    [SerializeField] private GridObjects gridObjects;
+
+    [SerializeField] private float cellWidth = 1.1f;
+    [SerializeField] private float cellHeight = 1.01f;
+    [SerializeField] private float rowShift = 0.12f;  // cell angle 12/100
     [SerializeField] private Transform gridStartPoint;
+
+    [SerializeField] private GridObjects gridObjects;
     [SerializeField] private int defaultDepth; // greater the depth, closer the object to the screen
 
     private static FieldGrid grid;
-    private static IMoveable[,] objectsOnGrid;
 
     void Awake()
     {
@@ -34,14 +39,17 @@ public class GridSystem : MonoBehaviour
             Destroy(this);
         DontDestroyOnLoad(this);
 
-        grid = new FieldGrid(gridWidth, gridHeight, gridStartPoint.position);
-        objectsOnGrid = new IMoveable[gridWidth, gridHeight];
-
+        grid = new FieldGrid(gridWidth, gridHeight);
     }
 
     void Start()
     {
         Instance.PlaceStones();
+    }
+
+    public (int width, int height) GridSize
+    {
+        get { return (gridWidth, gridHeight); }
     }
 
     private void PlaceStones()
@@ -57,43 +65,45 @@ public class GridSystem : MonoBehaviour
 
     public void AddObject(GameObject objectPrefab, Vector2Int coords)
     {
-        if (objectsOnGrid[coords.x, coords.y] != null) return;
+        if (grid.IsOccupied(coords)) return;
 
         var obj = Instantiate(objectPrefab, Coords2WorldPosition(coords, defaultDepth), objectPrefab.transform.rotation);
-        objectsOnGrid[coords.x, coords.y] = obj.GetComponent<IMoveable>();
+        grid.Set(obj.GetComponent<IPlaceable>(), coords);
     }
 
-    public void PlaceObject(GameObject obj, Vector2Int coords, int depth)
+    public void PlaceObject(GameObject obj, Vector2Int coords)
     {
-        var moveable = obj.GetComponent<IMoveable>();
-        if (moveable == null) return;
+        var placeable = obj.GetComponent<IPlaceable>();
+        if (placeable == null) return;
 
-        if (IsOccupied(coords)) return;
-
-        obj.transform.position = Coords2WorldPosition(coords, depth);
-        moveable.PositionOnGrid = coords;
-        objectsOnGrid[coords.x, coords.y] = moveable;
+        if (!grid.IsOccupied(coords))
+            grid.Set(placeable, coords);
     }
 
     public bool MoveOnGrid(IMoveable moveable, Vector2Int direction)
     {
         var newCoords = moveable.PositionOnGrid + direction;
-        if (!grid.IsValid(newCoords) || IsOccupied(newCoords)) return false;
+        if (grid.IsOccupied(newCoords)) return false;
 
-        objectsOnGrid[moveable.PositionOnGrid.x, moveable.PositionOnGrid.y] = null;
-        objectsOnGrid[newCoords.x, newCoords.y] = moveable;
-        moveable.PositionOnGrid = newCoords;
+        grid.Remove(moveable.PositionOnGrid);
+        grid.Set(moveable, newCoords);
         return true;
     }
 
     public Vector3 Coords2WorldPosition(Vector2Int coords, int depth)
     {
-        var position = grid.Coords2WorldPosition(coords);
-        return new Vector3(position.x, position.y, -depth / 100f);
+        if (!grid.IsValid(coords)) return Vector3.zero;
+
+        return new Vector3(
+            gridStartPoint.position.x + coords.x * cellWidth + rowShift * coords.y,
+            gridStartPoint.position.y + coords.y * cellHeight,
+            -depth / 100f);
     }
 
-    public bool IsOccupied(Vector2Int coords)
+    public List<Vector2Int> FindPath(IMoveable moveable, Vector2Int destination)
     {
-        return objectsOnGrid[coords.x, coords.y] != null;
+        if (grid.IsOccupied(destination)) return new List<Vector2Int>();
+
+        return grid.FindPath(moveable.PositionOnGrid, destination);
     }
 }

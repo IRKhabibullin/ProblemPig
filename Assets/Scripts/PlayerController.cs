@@ -30,6 +30,7 @@ public class PlayerController : MonoBehaviour
 
     private Vector2Int CheckMovement()
     {
-        return new Vector2Int((int)Input.GetAxisRaw("Horizontal"), (int)Input.GetAxisRaw("Vertical"));
+        var horizontal = (int)Input.GetAxisRaw("Horizontal");
+        return new Vector2Int(horizontal, horizontal != 0 ? 0 : (int)Input.GetAxisRaw("Vertical"));
     }
 }

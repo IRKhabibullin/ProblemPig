@@ -1,56 +1,55 @@
 using System.Collections;
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody2D))]
-public class MovementController : MonoBehaviour
+public class MovementController : MonoBehaviour, IMoveable
 {
-    [SerializeField] private float maxSpeed;
     [SerializeField] private Rigidbody2D _rb;
     [SerializeField] private Animator animator;
-    [SerializeField] private IMoveable moveable;
-    private Vector2Int currentMovement = Vector2Int.zero;
+    [SerializeField] private Vector2Int startCoords;
+    [SerializeField] private float maxSpeed;
+    [SerializeField] private int depth;
 
-    private bool isMoving = false;
+    public Vector2Int PositionOnGrid { get; set; }
+
+    public bool IsMoving { get; set; } = false;
     private IEnumerator movementCoroutine;
 
-    private void Start()
+    void Start()
     {
-        moveable = GetComponent<IMoveable>();
+        GridSystem.Instance.PlaceObject(gameObject, startCoords);
+        transform.position = GridSystem.Instance.Coords2WorldPosition(startCoords, depth);
     }
 
-    void Update()
+    public void Move(Vector2Int direction)
     {
-        currentMovement.x = (int)Input.GetAxisRaw("Horizontal");
-        currentMovement.y = (int)Input.GetAxisRaw("Vertical");
-        if (currentMovement != Vector2Int.zero && !isMoving)
-        {
-            Move(currentMovement);
-        }
-    }
+        if (IsMoving) return;
 
-    private void Move(Vector2Int direction)
-    {
-        /*var newPosition = moveable.Move(direction);
-        if (newPosition != null)
+        var hasMoved = GridSystem.Instance.MoveOnGrid(this, direction);
+        if (hasMoved)
         {
-            animator.SetFloat("Horizontal", direction.x);
-            animator.SetFloat("Vertical", direction.y);
-            movementCoroutine = MoveCoroutine((Vector3)newPosition);
+            UpdateAnimator(direction);
+            var newPosition = GridSystem.Instance.Coords2WorldPosition(PositionOnGrid, depth);
+            movementCoroutine = MoveCoroutine(newPosition);
             StartCoroutine(movementCoroutine);
-        }*/
+        }
     }
 
     private IEnumerator MoveCoroutine(Vector3 destination)
     {
-        isMoving = true;
+        IsMoving = true;
         while (_rb.position != (Vector2)destination)
         {
             var newPosition = Vector3.MoveTowards(_rb.position, destination, maxSpeed * Time.fixedDeltaTime);
             _rb.MovePosition(newPosition);
             yield return new WaitForFixedUpdate();
         }
-        isMoving = false;
-        animator.SetFloat("Horizontal", 0f);
-        animator.SetFloat("Vertical", 0f);
+        IsMoving = false;
+        UpdateAnimator(Vector2.zero);
+    }
+
+    private void UpdateAnimator(Vector2 direction)
+    {
+        animator.SetFloat("Horizontal", direction.x);
+        animator.SetFloat("Vertical", direction.y);
     }
 }
