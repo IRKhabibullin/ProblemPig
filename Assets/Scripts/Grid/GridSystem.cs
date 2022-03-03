@@ -28,6 +28,7 @@ public class GridSystem : MonoBehaviour
     [SerializeField] private float cellHeight = 1.01f;
     [SerializeField] private float rowShift = 0.12f;  // cell angle 12/100
     [SerializeField] private Transform gridStartPoint;
+    [SerializeField] private Transform gridObjectsStorage;
 
     [SerializeField] private GridObjects gridObjects;
     [SerializeField] private int defaultDepth = 1; // greater the depth, closer the object to the screen
@@ -72,6 +73,7 @@ public class GridSystem : MonoBehaviour
         var placeable = obj.GetComponent<IPlaceable>();
         grid.Set(placeable, coords);
         placeable.PositionOnGrid = coords;
+        obj.transform.parent = gridObjectsStorage;
     }
 
     public bool PlaceObject(GameObject obj, Vector2Int coords)
@@ -89,14 +91,7 @@ public class GridSystem : MonoBehaviour
     public bool MoveOnGrid(IMoveable moveable, Vector2Int direction)
     {
         var newCoords = moveable.PositionOnGrid + direction;
-        try
-        {
-            if (!grid.IsValid(newCoords) || grid.IsOccupied(newCoords) && !grid.Get(newCoords).IsPassable) return false;
-        }
-        catch (NullReferenceException e)
-        {
-            Debug.Log(e);
-        }
+        if (!grid.IsValid(newCoords) || grid.IsOccupied(newCoords)) return false;
 
         grid.Remove(moveable.PositionOnGrid);
         grid.Set(moveable, newCoords);
@@ -137,15 +132,8 @@ public class GridSystem : MonoBehaviour
                     continue;
 
                 var cell = grid.Get(cellCoords);
-                try
-                {
-                    if (cell != null && cell.Object.CompareTag(tag))
-                        return cell;
-                }
-                catch (MissingReferenceException e)
-                {
-                    Debug.Log(e);
-                }
+                if (cell != null && cell.Object.CompareTag(tag))
+                    return cell;
             }
         }
         return null;

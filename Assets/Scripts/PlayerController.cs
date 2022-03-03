@@ -1,10 +1,15 @@
+using System.Collections;
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviour, IBombInteractable
 {
     private IMoveable moveable;
     private Vector2Int lastDirection;
+    private bool isPlanting = false;
+    private bool isPlantingOnCooldown = false;
     [SerializeField] private GameObject bombPrefab;
+    [SerializeField] private float plantingTime;
+    [SerializeField] private float plantingCooldown;
 
     void Start()
     {
@@ -24,6 +29,8 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateMovement()
     {
+        if (isPlanting) return;
+
         lastDirection = CheckMovement();
         if (lastDirection != Vector2Int.zero)
         {
@@ -39,21 +46,34 @@ public class PlayerController : MonoBehaviour
 
     private void CheckPlantInput()
     {
+        if (isPlantingOnCooldown) return;
+
         if (Input.GetKeyUp(KeyCode.Space))
         {
-            PlantBomb();
+            StartCoroutine(PlantBomb());
         }
-
     }
 
-    private void PlantBomb()
+    private IEnumerator PlantBomb()
     {
-        var bomb = Instantiate(bombPrefab, transform.position, Quaternion.identity);
-        var pigBackside = lastDirection == Vector2Int.zero ? Vector2Int.right : -lastDirection;
-        var placed = GridSystem.Instance.PlaceObject(bomb, moveable.PositionOnGrid + pigBackside);
-        if (placed)
-            bomb.transform.position = GridSystem.Instance.Coords2WorldPosition(bomb.GetComponent<IPlaceable>().PositionOnGrid);
-        else
-            Destroy(bomb);
+        isPlanting = true;
+        isPlantingOnCooldown = true;
+        yield return new WaitForSeconds(plantingTime);
+        var bomb = Instantiate(bombPrefab, GridSystem.Instance.Coords2WorldPosition(moveable.PositionOnGrid), Quaternion.identity);
+        isPlanting = false;
+        yield return new WaitForSeconds(plantingCooldown);
+        isPlantingOnCooldown = false;
+    }
+
+    public void TriggerBomb()
+    {
+        StartCoroutine(Haste());
+    }
+
+    private IEnumerator Haste()
+    {
+        ((MovementController)moveable).SpeedUp(1.5f);
+        yield return new WaitForSeconds(5);
+        ((MovementController)moveable).SpeedUp(1);
     }
 }

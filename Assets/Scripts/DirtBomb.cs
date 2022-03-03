@@ -1,20 +1,23 @@
+using System.Collections;
 using UnityEngine;
 
-public class DirtBomb : MonoBehaviour, IPlaceable
+public class DirtBomb : MonoBehaviour
 {
-    public GameObject Object { get; set; }
+    private bool isActive = false;
 
-    public Vector2Int PositionOnGrid { get; set; }
+    [SerializeField] private SpriteRenderer sprite;
 
-    public bool IsPassable { get; set; } = true;
-
-    private void Start()
+    private IEnumerator Start()
     {
-        Object = gameObject;
+        yield return new WaitForSeconds(3);
+        isActive = true;
+        sprite.color = Color.white;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        if (!isActive) return;
+
         var interactable = collision.GetComponent<IBombInteractable>();
         if (interactable != null)
         {

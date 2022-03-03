@@ -11,15 +11,20 @@ public class MovementController : MonoBehaviour, IMoveable
 
     public GameObject Object { get; private set; }
     public Vector2Int PositionOnGrid { get; set; }
+    public void SpeedUp(float multiplier)
+    {
+        this.speed = maxSpeed * multiplier;
+    }
 
     public bool IsMoving { get; set; } = false;
-    public bool IsPassable { get; set; } = true;
 
+    private float speed;
     private IEnumerator movementCoroutine;
 
     void Start()
     {
         Object = gameObject;
+        speed = maxSpeed;
         GridSystem.Instance.PlaceObject(gameObject, startCoords);
         transform.position = GridSystem.Instance.Coords2WorldPosition(startCoords, depth);
     }
@@ -43,7 +48,7 @@ public class MovementController : MonoBehaviour, IMoveable
         IsMoving = true;
         while (_rb.position != (Vector2)destination)
         {
-            var newPosition = Vector3.MoveTowards(_rb.position, destination, maxSpeed * Time.fixedDeltaTime);
+            var newPosition = Vector3.MoveTowards(_rb.position, destination, speed * Time.fixedDeltaTime);
             _rb.MovePosition(newPosition);
             yield return new WaitForFixedUpdate();
         }
