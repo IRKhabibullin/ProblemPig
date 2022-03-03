@@ -4,37 +4,36 @@ using System.Linq;
 using UnityEngine;
 
 [Serializable]
-public class FieldGrid
+public class FieldGrid<T>
 {
     public readonly int width;
     public readonly int height;
-    private IPlaceable[,] _objects;
+    private T[,] _objects;
 
     public FieldGrid(int width, int height)
     {
         this.width = width;
         this.height = height;
-        _objects = new IPlaceable[width, height];
+        _objects = new T[width, height];
     }
 
-    public IPlaceable Get(Vector2Int coords)
+    public T Get(Vector2Int coords)
     {
-        if (!IsValid(coords)) return null;
+        if (!IsValid(coords)) return default;
 
         return _objects[coords.x, coords.y];
     }
 
-    public void Set(IPlaceable obj, Vector2Int coords)
+    public void Set(T obj, Vector2Int coords)
     {
         _objects[coords.x, coords.y] = obj;
-        obj.PositionOnGrid = coords;
     }
 
     public void Remove(Vector2Int coords)
     {
         if (!IsValid(coords)) return;
 
-        _objects[coords.x, coords.y] = null;
+        _objects[coords.x, coords.y] = default;
     }
 
     public bool IsValid(Vector2Int coords)
@@ -49,14 +48,14 @@ public class FieldGrid
         return !IsValid(coords) || _objects[coords.x, coords.y] != null;
     }
 
-    private List<(Vector2Int coords, float weight)> WeightedNeigbours(Vector2Int currentCell)
+    private List<(Vector2Int coords, float weight)> WeightedNeigbours(Vector2Int currentCell, Vector2Int destination)
     {
         Vector2Int[] straightDirections = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
         List<(Vector2Int, float)> neighbours = new List<(Vector2Int, float)>();
         foreach (var direction in straightDirections)
         {
             var neighbour = currentCell + direction;
-            if (!IsOccupied(neighbour))
+            if (!IsOccupied(neighbour) || neighbour == destination)
                 neighbours.Add((neighbour, 1f));
         }
 
@@ -78,7 +77,7 @@ public class FieldGrid
             var current = queue.Dequeue();
             if (current == destination)
                 break;
-            foreach (var neighbour in WeightedNeigbours(current))
+            foreach (var neighbour in WeightedNeigbours(current, destination))
             {
                 float point_cost = costs[current] + neighbour.weight;
                 if (!costs.ContainsKey(neighbour.coords) || point_cost < costs[neighbour.coords])

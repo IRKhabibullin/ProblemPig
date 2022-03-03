@@ -515,6 +515,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Pig
       objectReference: {fileID: 0}
+    - target: {fileID: 1993562679237336411, guid: 889fa49999b1803499723e7bc56e3b31, type: 3}
+      propertyPath: m_TagString
+      value: Pig
+      objectReference: {fileID: 0}
     - target: {fileID: 1993562679237336414, guid: 889fa49999b1803499723e7bc56e3b31, type: 3}
       propertyPath: m_RootOrder
       value: 6
@@ -658,6 +662,8 @@ GameObject:
   - component: {fileID: 2043953446}
   - component: {fileID: 2043953445}
   - component: {fileID: 2043953449}
+  - component: {fileID: 2043953450}
+  - component: {fileID: 2043953451}
   m_Layer: 0
   m_Name: Farmer
   m_TagString: Untagged
@@ -675,7 +681,7 @@ Animator:
   m_GameObject: {fileID: 2043953444}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 22100000, guid: 0e60ce020b356244898a3c473863b228, type: 2}
+  m_Controller: {fileID: 9100000, guid: a8171b0b9ef22e84098d7dd4911c39e3, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -773,3 +779,36 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &2043953450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2043953444}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11da741dea8e7f1449a253b274ce4f4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _rb: {fileID: 2043953449}
+  animator: {fileID: 2043953445}
+  startCoords: {x: 10, y: 6}
+  maxSpeed: 5
+  depth: 2
+--- !u!114 &2043953451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2043953444}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01bc513058ce0e747b9e12139e03bbb9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  idlePeriod: 3
+  petrifyDiration: 3
+  visionRange: 5
+  pigTag: Pig

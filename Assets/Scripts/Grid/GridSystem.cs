@@ -31,7 +31,7 @@ public class GridSystem : MonoBehaviour
     [SerializeField] private GridObjects gridObjects;
     [SerializeField] private int defaultDepth; // greater the depth, closer the object to the screen
 
-    private static FieldGrid grid;
+    private static FieldGrid<IPlaceable> grid;
 
     void Awake()
     {
@@ -39,7 +39,7 @@ public class GridSystem : MonoBehaviour
             Destroy(this);
         DontDestroyOnLoad(this);
 
-        grid = new FieldGrid(gridWidth, gridHeight);
+        grid = new FieldGrid<IPlaceable>(gridWidth, gridHeight);
     }
 
     void Start()
@@ -68,7 +68,9 @@ public class GridSystem : MonoBehaviour
         if (grid.IsOccupied(coords)) return;
 
         var obj = Instantiate(objectPrefab, Coords2WorldPosition(coords, defaultDepth), objectPrefab.transform.rotation);
-        grid.Set(obj.GetComponent<IPlaceable>(), coords);
+        var placeable = obj.GetComponent<IPlaceable>();
+        grid.Set(placeable, coords);
+        placeable.PositionOnGrid = coords;
     }
 
     public void PlaceObject(GameObject obj, Vector2Int coords)
@@ -77,7 +79,10 @@ public class GridSystem : MonoBehaviour
         if (placeable == null) return;
 
         if (!grid.IsOccupied(coords))
+        {
             grid.Set(placeable, coords);
+            placeable.PositionOnGrid = coords;
+        }
     }
 
     public bool MoveOnGrid(IMoveable moveable, Vector2Int direction)
@@ -87,6 +92,7 @@ public class GridSystem : MonoBehaviour
 
         grid.Remove(moveable.PositionOnGrid);
         grid.Set(moveable, newCoords);
+        moveable.PositionOnGrid = newCoords;
         return true;
     }
 
@@ -100,10 +106,27 @@ public class GridSystem : MonoBehaviour
             -depth / 100f);
     }
 
-    public List<Vector2Int> FindPath(IMoveable moveable, Vector2Int destination)
+    public List<Vector2Int> FindPath(IMoveable moveable, Vector2Int destination, bool checkDestinationUnoccupied = true)
     {
-        if (grid.IsOccupied(destination)) return new List<Vector2Int>();
+        if (checkDestinationUnoccupied && grid.IsOccupied(destination)) return new List<Vector2Int>();
 
         return grid.FindPath(moveable.PositionOnGrid, destination);
+    }
+
+    public IPlaceable FindByTag(Vector2Int searchPosition, int searchRange, string tag)
+    {
+        for (var i = 0; i < grid.width; i++)
+        {
+            for (var j = 0; j < grid.height; j++)
+            {
+                var cellCoords = new Vector2Int(i, j);
+                if (grid.Distance(searchPosition, cellCoords) > searchRange) continue;
+
+                var cell = grid.Get(cellCoords);
+                if (cell != null && cell.Object.CompareTag(tag))
+                    return cell;
+            }
+        }
+        return null;
     }
 }

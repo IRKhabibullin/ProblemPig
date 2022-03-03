@@ -9,6 +9,7 @@ public class MovementController : MonoBehaviour, IMoveable
     [SerializeField] private float maxSpeed;
     [SerializeField] private int depth;
 
+    public GameObject Object { get; private set; }
     public Vector2Int PositionOnGrid { get; set; }
 
     public bool IsMoving { get; set; } = false;
@@ -16,6 +17,7 @@ public class MovementController : MonoBehaviour, IMoveable
 
     void Start()
     {
+        Object = gameObject;
         GridSystem.Instance.PlaceObject(gameObject, startCoords);
         transform.position = GridSystem.Instance.Coords2WorldPosition(startCoords, depth);
     }
