@@ -8,6 +8,11 @@ public class FarmerController : StateMachine
     private IMoveable moveable;
     private List<Vector2Int> path;
     private IMoveable pigInVision;
+
+    [SerializeField] private Animator animator;
+    [SerializeField] private RuntimeAnimatorController roamAnimatorController;
+    [SerializeField] private AnimatorOverrideController chaseAnimatorController;
+    [SerializeField] private AnimatorOverrideController dirtyAnimatorController;
     [SerializeField] private float idlePeriod;
     [SerializeField] private float petrifyDiration;
     [SerializeField] private int visionRange;
@@ -80,6 +85,7 @@ public class FarmerController : StateMachine
 
     private IEnumerator Roam()
     {
+        animator.runtimeAnimatorController = roamAnimatorController;
         while (true)
         {
             CheckTriggers();
@@ -101,6 +107,7 @@ public class FarmerController : StateMachine
 
     private IEnumerator Chase()
     {
+        animator.runtimeAnimatorController = chaseAnimatorController;
         while (true)
         {
             CheckTriggers();
@@ -125,6 +132,7 @@ public class FarmerController : StateMachine
 
     private IEnumerator Petrify()
     {
+        animator.runtimeAnimatorController = dirtyAnimatorController;
         yield return new WaitForSeconds(petrifyDiration);
         CheckTriggers();
     }

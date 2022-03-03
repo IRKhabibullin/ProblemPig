@@ -808,6 +808,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01bc513058ce0e747b9e12139e03bbb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  animator: {fileID: 2043953445}
+  roamAnimatorController: {fileID: 9100000, guid: a8171b0b9ef22e84098d7dd4911c39e3, type: 2}
+  chaseAnimatorController: {fileID: 22100000, guid: 2d27840f7cc5b6147a54cb365abb7346, type: 2}
+  dirtyAnimatorController: {fileID: 22100000, guid: 0e60ce020b356244898a3c473863b228, type: 2}
   idlePeriod: 3
   petrifyDiration: 3
   visionRange: 5
