@@ -1,7 +1,10 @@
-using System;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
+using Jarmallnick.Miscellaneous.DataStructures;
+
+#if UNITY_EDITOR
+    using UnityEditor;
+#endif
 
 public class GridSystem : MonoBehaviour
 {
@@ -27,14 +30,14 @@ public class GridSystem : MonoBehaviour
 
     [SerializeField] private float cellWidth = 1.1f;
     [SerializeField] private float cellHeight = 1.01f;
-    [SerializeField] private float rowShift = 0.12f;  // cell angle 12/100
+    [SerializeField] private float rowShift = 0.12f;  // cell angle 12/100 (due to isometric grid sprite)
     [SerializeField] private Transform gridStartPoint;
     [SerializeField] private Transform gridObjectsStorage;
 
     [SerializeField] private GridObjects gridObjects;
     [SerializeField] private int defaultDepth = 1; // greater the depth, closer the object to the screen
 
-    private static FieldGrid<IPlaceable> grid;
+    private static Grid<IPlaceable> grid;
 
     void Awake()
     {
@@ -42,7 +45,7 @@ public class GridSystem : MonoBehaviour
             Destroy(this);
         DontDestroyOnLoad(this);
 
-        grid = new FieldGrid<IPlaceable>(gridWidth, gridHeight);
+        grid = new Grid<IPlaceable>(gridWidth, gridHeight);
     }
 
     void Start()
@@ -142,6 +145,7 @@ public class GridSystem : MonoBehaviour
         return null;
     }
 
+#if UNITY_EDITOR
     private void OnDrawGizmos()
     {
         if (grid == null)
@@ -167,4 +171,5 @@ public class GridSystem : MonoBehaviour
             }
         }
     }
+#endif
 }

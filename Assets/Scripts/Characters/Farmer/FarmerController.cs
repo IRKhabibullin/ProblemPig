@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using Jarmallnick.Miscellaneous.StateMachine;
 
 public class FarmerController : StateMachine, IBombInteractable
 {
