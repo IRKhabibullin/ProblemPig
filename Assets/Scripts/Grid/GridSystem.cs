@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 public class GridSystem : MonoBehaviour
@@ -69,7 +70,7 @@ public class GridSystem : MonoBehaviour
     {
         if (grid.IsOccupied(coords)) return;
 
-        var obj = Instantiate(objectPrefab, Coords2WorldPosition(coords, defaultDepth), objectPrefab.transform.rotation);
+        var obj = Instantiate(objectPrefab, Coords2WorldPosition(coords), objectPrefab.transform.rotation);
         var placeable = obj.GetComponent<IPlaceable>();
         grid.Set(placeable, coords);
         placeable.PositionOnGrid = coords;
@@ -82,6 +83,8 @@ public class GridSystem : MonoBehaviour
         if (placeable == null) return false;
 
         if (grid.IsOccupied(coords)) return false;
+
+        grid.Remove(placeable.PositionOnGrid);
 
         grid.Set(placeable, coords);
         placeable.PositionOnGrid = coords;
@@ -137,5 +140,31 @@ public class GridSystem : MonoBehaviour
             }
         }
         return null;
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (grid == null)
+            return;
+
+        for (var i = 0; i < gridWidth; i++)
+        {
+            for (var j = 0; j < gridHeight; j++)
+            {
+                var coords = new Vector2Int(i, j);
+                var center = Coords2WorldPosition(coords);
+                Vector3[] verts = new Vector3[]
+                {
+                    new Vector3(center.x - cellWidth / 2 - rowShift / 2, center.y - cellHeight / 2, center.z),
+                    new Vector3(center.x - cellWidth / 2 + rowShift / 2, center.y + cellHeight / 2, center.z),
+                    new Vector3(center.x + cellWidth / 2 + rowShift / 2, center.y + cellHeight / 2, center.z),
+                    new Vector3(center.x + cellWidth / 2 - rowShift / 2, center.y - cellHeight / 2, center.z)
+                };
+                var cellColor = new Color(0.5f, 0.5f, 0.5f, 0.1f);
+                if (grid.IsOccupied(coords))
+                    cellColor = new Color(0.8f, 0.5f, 0.5f, 0.3f);
+                Handles.DrawSolidRectangleWithOutline(verts, cellColor, new Color(0, 0, 0, 1));
+            }
+        }
     }
 }

@@ -6,7 +6,7 @@ public class Stone : MonoBehaviour, IPlaceable
 
     public GameObject Object { get; private set; }
 
-    private void Start()
+    private void Awake()
     {
         Object = gameObject;
     }

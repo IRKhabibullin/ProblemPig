@@ -23,7 +23,6 @@ public abstract class StateMachine : MonoBehaviour
             Debug.LogError("Initial state not set in StateMachine instance");
             Destroy(this);
         }
-        StartCoroutine(currentState.ActivateBehaviour());
     }
 
     protected void CheckTriggers()
@@ -38,9 +37,10 @@ public abstract class StateMachine : MonoBehaviour
         }
     }
 
-    protected void SetState(State newState)
+    protected virtual void SetState(State newState)
     {
-        StopCoroutine(currentState.activeBehaviour);
+        if (currentState != null && currentState.activeBehaviour != null)
+            StopCoroutine(currentState.activeBehaviour);
         currentState = newState;
         StartCoroutine(currentState.ActivateBehaviour());
     }

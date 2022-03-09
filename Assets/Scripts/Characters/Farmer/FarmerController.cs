@@ -1,13 +1,16 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class FarmerController : StateMachine, IBombInteractable
 {
-    private IMoveable moveable;
-    private List<Vector2Int> path;
-    private IMoveable pigInVision;
+    public bool isStunned = false;
+    public bool pigCatched = false;
+    public UnityEvent onBombTrigger;
+    public UnityEvent onPigCatched;
 
     [SerializeField] private Animator animator;
     [SerializeField] private RuntimeAnimatorController roamAnimatorController;
@@ -18,7 +21,11 @@ public class FarmerController : StateMachine, IBombInteractable
     [SerializeField] private int visionRange;
     [SerializeField] private string pigTag;
 
-    public bool isStunned = false;
+    [SerializeField] private TextMeshProUGUI debugText;
+
+    private IMoveable moveable;
+    private List<Vector2Int> path;
+    private IMoveable pigInVision;
 
     protected override void Start()
     {
@@ -28,9 +35,20 @@ public class FarmerController : StateMachine, IBombInteractable
             Debug.LogError("Can't find required component of type <IMoveable>");
             Destroy(gameObject);
         }
+
         path = new List<Vector2Int>();
+        ((MovementController)moveable).ResetPosition();
 
         base.Start();
+    }
+
+    public void ResetCharacter()
+    {
+        isStunned = false;
+        pigCatched = false;
+        path = new List<Vector2Int>();
+        ((MovementController)moveable).ResetPosition();
+        InitStates();
     }
 
     protected override void InitStates()
@@ -52,6 +70,7 @@ public class FarmerController : StateMachine, IBombInteractable
         stateTransitions = new Dictionary<Func<bool>, State>();
         stateTransitions.Add(PigLost, roamState);
         stateTransitions.Add(Stunned, stunnedState);
+        stateTransitions.Add(Catched, new FinalState());
         stateMachine.Add(chaseState, stateTransitions);
 
         // Stunned state
@@ -59,17 +78,18 @@ public class FarmerController : StateMachine, IBombInteractable
         stateTransitions.Add(Recovered, roamState);
         stateMachine.Add(stunnedState, stateTransitions);
 
-        // set initial state (without activating it)
-        currentState = roamState;
+        // set initial state
+        SetState(roamState);
     }
 
     public void TriggerBomb()
     {
         isStunned = true;
+        onBombTrigger?.Invoke();
     }
 
     #region behaviours
-    private void SetNewDestination()
+    private void SetNewPath()
     {
         var destination = new Vector2Int(
             UnityEngine.Random.Range(0, GridSystem.Instance.GridSize.width),
@@ -78,7 +98,7 @@ public class FarmerController : StateMachine, IBombInteractable
         path = GridSystem.Instance.FindPath(moveable, destination);
     }
 
-    private bool PathEnded()
+    private bool IsPathEmpty()
     {
         return path.Count == 0;
     }
@@ -93,19 +113,35 @@ public class FarmerController : StateMachine, IBombInteractable
     private IEnumerator Roam()
     {
         animator.runtimeAnimatorController = roamAnimatorController;
+        path.Clear();
+        var idleStartTime = Time.time;
+        var idleTimedOut = false;
         while (true)
         {
             CheckTriggers();
 
-            if (PathEnded())
+            if (IsPathEmpty())
             {
-                yield return new WaitForSeconds(idlePeriod);
-                SetNewDestination();
+                if (!idleTimedOut)
+                {
+                    if (Time.time - idleStartTime > idlePeriod)
+                    {
+                        idleTimedOut = true;
+                    }
+                }
+                else
+                {
+                    SetNewPath();
+                }
             }
-
-            if (!PathEnded() && !moveable.IsMoving)
+            else if (!moveable.IsMoving)
             {
                 moveable.Move(NextStepDirectionOnPath());
+                if (IsPathEmpty())
+                {
+                    idleStartTime = Time.time;
+                    idleTimedOut = false;
+                }
             }
 
             yield return new WaitForSeconds(0.01f);
@@ -121,13 +157,13 @@ public class FarmerController : StateMachine, IBombInteractable
 
             if (pigInVision != null)
             {
-                // if pig is next to farmer, catch it. Probably need to move it to another trigger and add new state.
                 if (Vector2Int.Distance(moveable.PositionOnGrid, pigInVision.PositionOnGrid) == 1)
                 {
-                    Debug.Log("You have been caught!");
+                    pigCatched = true;
+                    onPigCatched?.Invoke();
                 }
 
-                if (!PathEnded() && !moveable.IsMoving)
+                if (!moveable.IsMoving)
                 {
                     path = GridSystem.Instance.FindPath(moveable, pigInVision.PositionOnGrid, false);
                     moveable.Move(NextStepDirectionOnPath());
@@ -167,6 +203,11 @@ public class FarmerController : StateMachine, IBombInteractable
     private bool Recovered()
     {
         return currentState.GetType() == typeof(StunnedState);
+    }
+
+    private bool Catched()
+    {
+        return pigCatched;
     }
     #endregion
 }

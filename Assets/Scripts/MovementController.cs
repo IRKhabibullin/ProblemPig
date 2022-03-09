@@ -3,20 +3,15 @@ using UnityEngine;
 
 public class MovementController : MonoBehaviour, IMoveable
 {
+    public GameObject Object { get; private set; }
+    public Vector2Int PositionOnGrid { get; set; }
+    public bool IsMoving { get; set; } = false;
+
     [SerializeField] private Rigidbody2D _rb;
     [SerializeField] private Animator animator;
     [SerializeField] private Vector2Int startCoords;
     [SerializeField] private float maxSpeed;
     [SerializeField] private int depth;
-
-    public GameObject Object { get; private set; }
-    public Vector2Int PositionOnGrid { get; set; }
-    public void SpeedUp(float multiplier)
-    {
-        this.speed = maxSpeed * multiplier;
-    }
-
-    public bool IsMoving { get; set; } = false;
 
     private float speed;
     private IEnumerator movementCoroutine;
@@ -25,8 +20,24 @@ public class MovementController : MonoBehaviour, IMoveable
     {
         Object = gameObject;
         speed = maxSpeed;
+    }
+
+    public void ResetPosition()
+    {
+
+        if (movementCoroutine != null)
+        {
+            StopCoroutine(movementCoroutine);
+            IsMoving = false;
+            UpdateAnimator(Vector2.zero);
+        }
         GridSystem.Instance.PlaceObject(gameObject, startCoords);
         transform.position = GridSystem.Instance.Coords2WorldPosition(startCoords, depth);
+    }
+
+    public void SpeedUp(float multiplier)
+    {
+        this.speed = maxSpeed * multiplier;
     }
 
     public void Move(Vector2Int direction)

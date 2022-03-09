@@ -3,7 +3,7 @@ using System.Collections;
 
 public abstract class State
 {
-    private Func<IEnumerator> behaviourDelegate;
+    protected Func<IEnumerator> behaviourDelegate;
     public IEnumerator activeBehaviour;
 
     public State(Func<IEnumerator> behaviourDelegate)
@@ -15,5 +15,17 @@ public abstract class State
     {
         activeBehaviour = behaviourDelegate();
         return activeBehaviour;
+    }
+}
+
+public class FinalState: State
+{
+    public FinalState(): base(EmptyBehaviour)
+    {
+    }
+
+    private static IEnumerator EmptyBehaviour()
+    {
+        yield break;
     }
 }
